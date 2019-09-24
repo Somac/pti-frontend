@@ -483,6 +483,35 @@ class MapModuleOlCesium extends MapModuleOl {
     }
 
     /**
+     *
+     * @method centerMap
+     * Moves the map to the given position and zoomlevel. Overrides 2d centerMap function.
+     * @param {Number[] | Object} lonlat coordinates to move the map to
+     * @param {Number} zoomLevel absolute zoomlevel to set the map to
+     * @param {Boolean} suppressEnd true to NOT send an event about the map move
+     *  (other components wont know that the map has moved, only use when chaining moves and
+     *     wanting to notify at end of the chain for performance reasons or similar) (optional)
+     * @param {Object} options  has values for heading, pitch, roll and duration
+     */
+    centerMap (lonlat, zoom, suppressEnd, options) {
+        lonlat = this.normalizeLonLat(lonlat);
+        const cameraHeight = zoom.type === 'scale' ? zoom.value * 500 : zoom.value * 5000;
+        const camera = this.getCesiumScene().camera;
+        const duration = 3;
+
+        lonlat = olProj.transform([lonlat.lon, lonlat.lat], this.getProjection(), 'EPSG:4326');
+        camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(lonlat[0], lonlat[1], cameraHeight),
+            duration: duration
+        });
+
+        if (suppressEnd !== true) {
+            this.notifyMoveEnd();
+        }
+        return true;
+    }
+
+    /**
      * Returns color expressions modified with layer opacity
      * @param {String | Object} colorDef Cesium style expression or object containing conditions array
      * @param {Number} opacity Layer opacity
